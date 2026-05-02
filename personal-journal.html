@@ -1379,17 +1379,25 @@ body {
 </template>
 
 
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
 <script>
 const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const CREDS = {user:'user',pass:'1234'};
+const firebaseConfig = {
+  apiKey: "AIzaSyB4GhBaSLviQWxnI4ShlZR70iQkcPVo9Ws",
+  authDomain: "myjournal-d1a66.firebaseapp.com",
+  projectId: "myjournal-d1a66",
+  storageBucket: "myjournal-d1a66.firebasestorage.app",
+  messagingSenderId: "972543709285",
+  appId: "1:972543709285:web:bd70daeaafd9bad3aeb68c",
+  measurementId: "G-8770BYK64M"
+};
+const CLOUD_DOC_PATH = { collection:'appState', doc:'journalState' };
 let curM = new Date().getMonth();
-let D = JSON.parse(localStorage.getItem('jd2')||'{}');
-if(!D.inv) D.inv={};
-if(!D.debts) D.debts=[];
-if(!D.customInvestCategories) D.customInvestCategories=[];
-if(!D.customDebtCategories) D.customDebtCategories=[];
-if(!D.customEntries) D.customEntries=[];
-const persist = ()=>localStorage.setItem('jd2',JSON.stringify(D));
+let D = normalizeState(JSON.parse(localStorage.getItem('jd2')||'{}'));
+let cloudDb = null;
+let cloudStateReady = Promise.resolve();
 const f = n=>'฿'+(+n||0).toLocaleString('en-US');
 const fN = n=>(+n||0).toLocaleString('en-US');
 const mk = m=>new Date().getFullYear()+'-'+String(m+1).padStart(2,'0');
@@ -1405,6 +1413,56 @@ const CUSTOM_DOMAIN_CONFIG = {
   invest: { label:'Investment', icon:'➕', color:'var(--green)', gradient:'linear-gradient(160deg,#d4f5e2,#c8eaff)', categoriesKey:'customInvestCategories' },
   debt: { label:'Debt', icon:'➕', color:'var(--red)', gradient:'linear-gradient(160deg,#ffd5d5,#ffe5cc)', categoriesKey:'customDebtCategories' }
 };
+function normalizeState(raw = {}){
+  return {
+    inv: raw.inv || {},
+    debts: raw.debts || [],
+    customInvestCategories: raw.customInvestCategories || [],
+    customDebtCategories: raw.customDebtCategories || [],
+    customEntries: raw.customEntries || []
+  };
+}
+function syncLocalState(){
+  localStorage.setItem('jd2', JSON.stringify(D));
+}
+async function saveCloudState(){
+  if(!cloudDb) return;
+  try{
+    await cloudDb.collection(CLOUD_DOC_PATH.collection).doc(CLOUD_DOC_PATH.doc).set({
+      state: D,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  }catch(err){
+    console.error('Cloud save failed', err);
+  }
+}
+function persist(){
+  syncLocalState();
+  void saveCloudState();
+}
+async function loadCloudState(){
+  if(!cloudDb) return;
+  try{
+    const snap = await cloudDb.collection(CLOUD_DOC_PATH.collection).doc(CLOUD_DOC_PATH.doc).get();
+    if(snap.exists){
+      D = normalizeState((snap.data() || {}).state || {});
+      syncLocalState();
+    }else{
+      await saveCloudState();
+    }
+  }catch(err){
+    console.error('Cloud load failed', err);
+  }
+}
+function initFirebaseCloud(){
+  if(typeof firebase === 'undefined') return Promise.resolve();
+  if(!firebase.apps.length){
+    firebase.initializeApp(firebaseConfig);
+  }
+  cloudDb = firebase.firestore();
+  return loadCloudState();
+}
+cloudStateReady = initFirebaseCloud();
 function incomeMonthSummary(key){
   if(!key) return {espp:0};
   const [year, month] = key.split('-');
@@ -1431,13 +1489,15 @@ function investmentSnapshot(inv = {}, key){
 }
 
 // ── LOGIN ──
-function doLogin(){
+async function doLogin(){
   const u=document.getElementById('lu').value, p=document.getElementById('lp').value;
   const e=document.getElementById('lerr');
   if(u===CREDS.user&&p===CREDS.pass){
+    await cloudStateReady;
     document.getElementById('login-page').style.display='none';
     document.getElementById('app').style.display='block';
     e.style.display='none';
+    renderCustomCategoryCards();
     updateDashboard();
   } else { e.style.display='block'; document.getElementById('lp').value=''; }
 }
@@ -1907,4 +1967,3 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 </script>
 </body>
 </html>
-
