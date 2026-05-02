@@ -1,15 +1,1969 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Journal</title>
-  <meta http-equiv="refresh" content="0; url=./personal-journal.html">
-  <script>
-    window.location.replace('./personal-journal.html');
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Journal</title>
+
+<!-- Sukhumvit Set for Thai -->
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+// ── THAI STOCK ──
+function initThaiStockDetail(){
+  // Load any extra transactions from localStorage
+  const extra = JSON.parse(localStorage.getItem('extraStockTx') || '[]');
+  if(extra.length > 0){
+    const sec = document.getElementById('extra-tx-section');
+    const list = document.getElementById('extra-tx-list');
+    if(sec) sec.style.display = 'block';
+    if(list){
+      list.innerHTML = extra.map((tx,i) => `
+        <div class="hist-row">
+          <div class="hist-num">${i+1}</div>
+          <div class="hist-info">
+            <div class="hist-main">${tx.date}</div>
+            <div class="hist-sub">${tx.note||''}</div>
+          </div>
+          <div style="text-align:right;font-size:12px;line-height:1.6">
+            ${tx.dep ? '<span style="color:var(--green);font-weight:700">+฿'+Number(tx.dep).toLocaleString('en-US')+'</span><br>' : ''}
+            ${tx.wd  ? '<span style="color:var(--red);font-weight:700">−฿'+Number(tx.wd).toLocaleString('en-US')+'</span><br>' : ''}
+            ${tx.div ? '<span style="color:var(--orange);font-weight:700">div ฿'+Number(tx.div).toLocaleString('en-US',{minimumFractionDigits:2})+'</span>' : ''}
+          </div>
+        </div>`).join('');
+    }
+  }
+}
+
+function addStockTx(){
+  const date = document.getElementById('ts-date').value.trim();
+  const dep  = parseFloat(document.getElementById('ts-dep').value) || 0;
+  const wd   = parseFloat(document.getElementById('ts-wd').value) || 0;
+  const div  = parseFloat(document.getElementById('ts-div').value) || 0;
+  const note = document.getElementById('ts-note').value.trim();
+  if(!date){ showToast('⚠️ Please enter a date'); return; }
+  if(!dep && !wd && !div){ showToast('⚠️ Enter at least one amount'); return; }
+  const extra = JSON.parse(localStorage.getItem('extraStockTx') || '[]');
+  extra.unshift({date, dep, wd, div, note, ts: Date.now()});
+  localStorage.setItem('extraStockTx', JSON.stringify(extra));
+  // Clear fields
+  ['ts-date','ts-dep','ts-wd','ts-div','ts-note'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  initThaiStockDetail();
+  showToast('✓ Transaction added');
+}
+
+
+// ── INCOME DATA (embedded from CSV) ──
+const INCOME_DATA = [{"date": "23/11/2018", "salary": 140218.12, "pvdSelf": 7419.38, "pvdApple": 7419.38, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/12/2018", "salary": 104112.8, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/01/2019", "salary": 99418.66, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/02/2019", "salary": 82027.41, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 11025.4, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2019", "salary": 81014.66, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 10880.73, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/04/2019", "salary": 79295.94, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 10693.18, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/05/2019", "salary": 86182.97, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 11753.54, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/06/2019", "salary": 82827.26, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 11237.27, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/07/2019", "salary": 81044.22, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 10962.96, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/08/2019", "salary": 78797.67, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 10617.34, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/09/2019", "salary": 81418.12, "pvdSelf": 4946.25, "pvdApple": 4946.25, "esppInv": 10829.41, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/10/2019", "salary": 84668.11, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 10728.55, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2019", "salary": 85678.66, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11380.61, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/12/2019", "salary": 81766.72, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11066.92, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/01/2020", "salary": 88198.48, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 12068.98, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/02/2020", "salary": 83475.13, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11342.31, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2020", "salary": 84087.91, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11489.21, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/04/2020", "salary": 84856.45, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 10744.37, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/05/2020", "salary": 85935.22, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 10384.17, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/06/2020", "salary": 77247.17, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 10384.17, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/07/2020", "salary": 97388.36, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11193.26, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/08/2020", "salary": 85384.41, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11688.67, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/09/2020", "salary": 82226.45, "pvdSelf": 5192.08, "pvdApple": 5192.08, "esppInv": 11098.29, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "22/10/2020", "salary": 87715.91, "pvdSelf": 5442.34, "pvdApple": 5442.34, "esppInv": 11479.39, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2020", "salary": 86118.57, "pvdSelf": 5491.36, "pvdApple": 5491.36, "esppInv": 11677.24, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/12/2020", "salary": 83042.51, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11316.84, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/01/2021", "salary": 124411.36, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11587.22, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/02/2021", "salary": 86586.8, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11782.66, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2021", "salary": 83640.41, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11381.98, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/04/2021", "salary": 84431.16, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11528.9, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/05/2021", "salary": 91076.09, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 12551.2, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/06/2021", "salary": 90611.14, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 12436.4, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/07/2021", "salary": 93718.0, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11903.61, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/08/2021", "salary": 86762.48, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 11281.53, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/09/2021", "salary": 102471.34, "pvdSelf": 5466.85, "pvdApple": 5466.85, "esppInv": 10933.7, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/10/2021", "salary": 122439.74, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 11954.36, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2021", "salary": 94735.67, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 12742.3, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/12/2021", "salary": 93545.85, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 12169.91, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/01/2022", "salary": 134802.04, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 12431.16, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/02/2022", "salary": 91091.61, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 11968.03, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2022", "salary": 90730.65, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 12542.19, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/04/2022", "salary": 90818.49, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 11915.4, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/05/2022", "salary": 99966.35, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 13567.22, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/06/2022", "salary": 96053.09, "pvdSelf": 5768.08, "pvdApple": 5768.08, "esppInv": 13291.8, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/07/2022", "salary": 95748.73, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13318.87, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/08/2022", "salary": 104227.92, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13779.26, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/09/2022", "salary": 95441.43, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13318.65, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/10/2022", "salary": 92561.47, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 12840.96, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2022", "salary": 97265.98, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13364.19, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/12/2022", "salary": 94549.59, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13146.83, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/01/2023", "salary": 97666.75, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13661.0, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/02/2023", "salary": 95959.58, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13430.44, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/03/2023", "salary": 99453.92, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13590.88, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/04/2023", "salary": 95361.55, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 12336.36, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/05/2023", "salary": 101843.22, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13632.54, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/06/2023", "salary": 105191.27, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 14018.62, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/07/2023", "salary": 98514.0, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 12883.66, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/08/2023", "salary": 94341.49, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13181.5, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/09/2023", "salary": 98813.87, "pvdSelf": 6210.49, "pvdApple": 6210.49, "esppInv": 13837.48, "esppBuy": 0.0, "esppSale": 199649.09}, {"date": "25/10/2023", "salary": 91729.41, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13148.54, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/11/2023", "salary": 107294.18, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14144.95, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/12/2023", "salary": 94022.46, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13501.69, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "29/12/2023", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 1802526.8}, {"date": "18/01/2024", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 886000.0}, {"date": "18/01/2024", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 0.0, "esppSale": 916564.04}, {"date": "25/01/2024", "salary": 103734.91, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13789.3, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "31/01/2024", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 80697.82, "esppSale": 0.0}, {"date": "23/02/2024", "salary": 98156.78, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14156.81, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2024", "salary": 94824.92, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13676.3, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/04/2024", "salary": 92670.8, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13312.82, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/05/2024", "salary": 100005.4, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14460.3, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/06/2024", "salary": 100405.73, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14502.81, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/07/2024", "salary": 101112.22, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14611.5, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "01/08/2024", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 14.0, "esppSale": 0.0}, {"date": "23/08/2024", "salary": 100771.22, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 14559.03, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/09/2024", "salary": 93097.11, "pvdSelf": 9685.57, "pvdApple": 9685.57, "esppInv": 13410.48, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "15/10/2024", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 8.0, "esppSale": 0.0}, {"date": "25/10/2024", "salary": 99492.71, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14413.75, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2024", "salary": 102768.67, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14822.94, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/12/2024", "salary": 98364.82, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14240.68, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/01/2025", "salary": 102562.08, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14897.51, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "31/01/2025", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 14.0, "esppSale": 0.0}, {"date": "24/01/2025", "salary": 102562.08, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14897.51, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/02/2025", "salary": 98674.94, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14299.5, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2025", "salary": 100787.74, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14656.62, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/04/2025", "salary": 96829.27, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14015.54, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/05/2025", "salary": 103522.39, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 15045.26, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/06/2025", "salary": 105785.17, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 15393.37, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/07/2025", "salary": 100184.06, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14531.67, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "01/08/2025", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 15.571, "esppSale": 0.0}, {"date": "25/08/2025", "salary": 100151.13, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14526.6, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/09/2025", "salary": 100118.24, "pvdSelf": 10131.11, "pvdApple": 10131.11, "esppInv": 14553.62, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "15/10/2025", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 11.0, "esppSale": 0.0}, {"date": "24/10/2025", "salary": 101377.29, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 14778.25, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/11/2025", "salary": 109063.98, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 15875.78, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/12/2025", "salary": 101479.92, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 14965.85, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "23/01/2026", "salary": 107549.75, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 15267.77, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "31/01/2026", "salary": 0.0, "pvdSelf": 0.0, "pvdApple": 0.0, "esppInv": 0.0, "esppBuy": 16.619, "esppSale": 0.0}, {"date": "25/02/2026", "salary": 104077.72, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 14733.62, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "25/03/2026", "salary": 102498.81, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 14490.71, "esppBuy": 0.0, "esppSale": 0.0}, {"date": "24/04/2026", "salary": 108325.6, "pvdSelf": 10677.18, "pvdApple": 10677.18, "esppInv": 15412.81, "esppBuy": 0.0, "esppSale": 0.0}];
+
+function initIncomeDetail() {
+  const dateInput=document.getElementById('inc-date');
+  const amountInput=document.getElementById('inc-amount');
+  const noteInput=document.getElementById('inc-note');
+  if(dateInput) dateInput.value=new Date().toISOString().slice(0,10);
+  if(amountInput) amountInput.value='';
+  if(noteInput) noteInput.value='';
+  renderIncomeHist();
+}
+
+function saveIncomeEntry(){
+  const date=(document.getElementById('inc-date')?.value || '').trim();
+  const amount=+document.getElementById('inc-amount').value||0;
+  const note=(document.getElementById('inc-note')?.value || '').trim();
+  if(!date){ showToast('⚠️ Please select a date'); return; }
+  if(!amount){ showToast('⚠️ Please enter an amount'); return; }
+  const key=date.slice(0,7);
+  const existing=D.inv[key]||{};
+  D.inv[key]={
+    ...existing,
+    salary: amount,
+    dateSalary: date,
+    noteSalary: note
+  };
+  persist();
+  updateDashboard();
+  renderIncomeHist();
+  showToast('✓ Salary saved');
+}
+
+function renderIncomeHist() {
+  const el=document.getElementById('inc-hist');
+  if(!el) return;
+  const rows=Object.entries(D.inv)
+    .filter(([,v]) => (v.salary||0) > 0)
+    .sort((a,b) => {
+      const ad=(a[1].dateSalary || (a[0]+'-01')).toString();
+      const bd=(b[1].dateSalary || (b[0]+'-01')).toString();
+      return bd.localeCompare(ad);
+    });
+  if(!rows.length){ el.innerHTML='<div class="empty-msg">No records yet</div>'; return; }
+  el.innerHTML=rows.map(([k,v],i)=>{
+    const dt=v.dateSalary || (k+'-01');
+    const note=v.noteSalary ? `<div class="hist-sub">${v.noteSalary}</div>` : '';
+    return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${dt}</div>${note}</div><div class="hist-val" style="color:var(--green)">${f(v.salary||0)}</div></div>`;
+  }).join('');
+}
+
+</script>
+
+<style>
+/* ── FONTS ── */
+
+@font-face {
+  font-family: 'HelveticaNeue';
+  src: local('Helvetica Neue'), local('HelveticaNeue'), local('Helvetica');
+  font-weight: 100 900;
+}
+
+:root {
+  --font-num: 'HelveticaNeue', 'Helvetica Neue', Helvetica, 'Sukhumvit Set', sans-serif;
+  --font-main: 'Sukhumvit Set', 'IBM Plex Sans Thai', 'Thonburi', 'Helvetica Neue', sans-serif;
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --card2: rgba(255,255,255,0.82);
+  --text: #1c1c1e;
+  --text2: #636366;
+  --text3: #aeaeb2;
+  --divider: rgba(0,0,0,0.09);
+  --blue: #007aff;
+  --red: #ff3b30;
+  --green: #34c759;
+  --orange: #ff9500;
+  --purple: #af52de;
+  --teal: #5ac8fa;
+  --pink: #ff2d55;
+  --tab-h: 82px;
+  --safe-top: 52px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Thai text selector */
+:lang(th), .th {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+#login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 28px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, #fce4d6 0%, #fad4d4 25%, #e8d5f5 55%, #d0e8ff 100%);
+}
+
+.l-icon { font-size: 60px; margin-bottom: 16px; }
+.l-title { font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.l-sub { font-size: 15px; color: var(--text2); margin-bottom: 44px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+.l-form { width: 100%; max-width: 340px; }
+.l-group { margin-bottom: 12px; }
+.l-group label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 7px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.l-group input {
+  width: 100%; background: rgba(255,255,255,0.9); border: 1px solid var(--divider);
+  border-radius: 14px; padding: 15px 18px; font-size: 16px; color: var(--text);
+  outline: none; transition: border-color .2s, box-shadow .2s; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  backdrop-filter: blur(10px);
+}
+.l-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,122,255,.15); }
+.l-group input::placeholder { color: var(--text3); }
+
+.l-btn {
+  width: 100%; padding: 16px; background: var(--blue); color: #fff; border: none;
+  border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer;
+  margin-top: 8px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; transition: transform .15s, opacity .15s;
+}
+.l-btn:active { transform: scale(.98); opacity: .85; }
+.l-err { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; display: none; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.l-hint { text-align: center; font-size: 12px; color: var(--text2); margin-top: 16px; opacity: .7; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#app { display: none; }
+
+/* Tab bar */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: var(--tab-h);
+  background: rgba(249,249,249,0.94); backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: .5px solid rgba(0,0,0,0.18);
+  display: flex; align-items: flex-start; padding-top: 10px; z-index: 300;
+}
+.tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 2px 0; }
+.tab-icon-wrap { font-size: 26px; transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.tab-item.active .tab-icon-wrap { transform: scale(1.1); }
+.tab-label { font-size: 10px; font-weight: 500; color: var(--text3); transition: color .15s; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.tab-item.active .tab-label { color: var(--blue); }
+
+/* Pages */
+.page {
+  display: none; min-height: 100vh;
+  padding-top: var(--safe-top); padding-bottom: calc(var(--tab-h) + 12px);
+  animation: fadeUp .3s ease;
+}
+.page.active { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+
+/* ══════════════════════════════════════
+   GRADIENT HEADER (Health-style)
+══════════════════════════════════════ */
+.grad-header {
+  height: 160px; position: relative; overflow: hidden;
+  margin-bottom: -30px;
+}
+.grad-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, #fce4d6 0%, #f9c9ca 30%, #e5d0f0 65%, #c8dff7 100%);
+}
+.grad-content {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 0 20px 36px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.grad-title { font-size: 34px; font-weight: 800; letter-spacing: -.5px; color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.av-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; border: 2.5px solid white;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+/* Section label (Pinned / etc.) */
+.section-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; margin-bottom: 14px;
+}
+.section-label { font-size: 20px; font-weight: 700; color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.section-action { font-size: 17px; color: var(--blue); cursor: pointer; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 400; }
+
+
+/* ══════════════════════════════════════
+   HEALTH-STYLE CARDS
+══════════════════════════════════════ */
+.cards-list { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.h-card {
+  background: var(--card);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+  -webkit-user-select: none;
+}
+.h-card:active { transform: scale(.98); box-shadow: 0 1px 6px rgba(0,0,0,.07); }
+
+.h-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: .5px solid rgba(0,0,0,0.06);
+}
+.h-card-left { display: flex; align-items: center; gap: 8px; }
+.h-card-icon { font-size: 20px; }
+.h-card-title { font-size: 17px; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.h-card-right { display: flex; align-items: center; gap: 4px; color: var(--text2); }
+.h-card-date { font-size: 14px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.h-chev { font-size: 16px; color: var(--text3); margin-top: 1px; }
+
+.h-card-body { padding: 14px 18px 18px; }
+
+/* Stat row inside card (like Activity) */
+.stat-row { display: flex; align-items: flex-end; gap: 0; }
+.stat-col { flex: 1; padding-right: 14px; }
+.stat-col + .stat-col { border-left: .5px solid var(--divider); padding-left: 14px; padding-right: 0; }
+.stat-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.stat-val { font-size: 26px; font-weight: 800; letter-spacing: -.5px; color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: flex; align-items: baseline; gap: 3px; }
+.stat-unit { font-size: 14px; font-weight: 500; color: var(--text2); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+.stat-grid { display: flex; flex-wrap: wrap; gap: 14px 0; }
+.stat-grid .stat-col { flex: 0 0 50%; padding: 0 14px 0 0; }
+.stat-grid .stat-col:nth-child(even) { border-left: .5px solid var(--divider); padding-left: 14px; }
+.stat-grid .stat-col:nth-child(odd) { border-left: 0; padding-left: 0; }
+.stat-grid .stat-col:nth-child(n+3) { padding-top: 14px; }
+.stat-grid .stat-name { font-size: 12px; line-height: 1.25; margin-bottom: 4px; }
+.stat-grid .stat-val { font-size: 20px; }
+.stat-grid .stat-unit { font-size: 12px; }
+
+/* Big single stat */
+.big-label { font-size: 14px; color: var(--text2); margin-bottom: 4px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.big-val { font-size: 48px; font-weight: 800; letter-spacing: -1px; color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: flex; align-items: baseline; gap: 5px; }
+.big-unit { font-size: 20px; font-weight: 500; color: var(--text2); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+/* Trend mini chart area */
+.mini-bars { display: flex; align-items: flex-end; gap: 4px; height: 40px; }
+.mini-bar { flex: 1; border-radius: 4px 4px 0 0; min-height: 4px; opacity: .7; transition: height .5s ease; }
+
+/* Progress ring */
+.ring-row { display: flex; align-items: center; gap: 20px; }
+.ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+.ring-svg { width: 64px; height: 64px; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke-width: 6; }
+.ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray 1s ease; }
+.ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+
+/* ══════════════════════════════════════
+   DETAIL VIEW (slide-up sheet)
+══════════════════════════════════════ */
+.detail-sheet {
+  position: fixed; inset: 0; z-index: 500;
+  pointer-events: none; opacity: 0;
+  transition: opacity .3s;
+}
+.detail-sheet.open { pointer-events: all; opacity: 1; }
+
+.detail-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.detail-panel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--bg);
+  border-radius: 22px 22px 0 0;
+  max-height: 92vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .38s cubic-bezier(.32,1,.44,1);
+}
+.detail-sheet.open .detail-panel { transform: translateY(0); }
+
+.detail-grab {
+  width: 36px; height: 5px; border-radius: 3px;
+  background: var(--text3); margin: 12px auto 0;
+}
+
+.detail-grad {
+  height: 120px; position: relative; overflow: hidden; border-radius: 0;
+}
+.detail-grad-bg { position: absolute; inset: 0; }
+
+.detail-header {
+  padding: 20px 22px 10px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.detail-icon-title { display: flex; align-items: center; gap: 10px; }
+.detail-big-icon { font-size: 28px; }
+.detail-title { font-size: 24px; font-weight: 800; letter-spacing: -.4px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.detail-close {
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.07);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  font-size: 16px; color: var(--text2); border: none; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.detail-body { padding: 0 16px 40px; }
+
+/* Detail section */
+.d-section { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 8px rgba(0,0,0,.06); }
+.d-sec-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+.d-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: .5px solid var(--divider); }
+.d-row:last-child { border-bottom: none; padding-bottom: 0; }
+.d-row-left { display: flex; align-items: center; gap: 10px; }
+.d-row-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.d-row-label { font-size: 15px; font-weight: 500; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.d-row-val { font-size: 16px; font-weight: 700; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+/* Chart in detail */
+.detail-chart-wrap { margin-top: 4px; }
+
+/* Form in detail */
+.d-form { }
+.d-field { margin-bottom: 12px; }
+.d-field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.d-field input {
+  width: 100%; background: var(--bg); border: 1px solid rgba(0,0,0,.12);
+  border-radius: 12px; padding: 13px 16px; font-size: 16px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: var(--text); outline: none; transition: border-color .2s;
+}
+.d-field input:focus { border-color: var(--blue); }
+.d-field input::placeholder { color: var(--text3); }
+
+.chip-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 16px; }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; padding: 6px 16px; border-radius: 20px; border: 1.5px solid rgba(0,0,0,.12); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; transition: all .18s; }
+.chip.active { border-color: var(--blue); background: var(--blue); color: #fff; }
+
+.invest-menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.invest-menu-btn {
+  border: 1px solid rgba(0,0,0,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(242,242,247,.9));
+  border-radius: 16px;
+  padding: 14px 12px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04);
+}
+.invest-menu-title { font-size: 14px; font-weight: 700; color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.invest-menu-sub { font-size: 11px; color: var(--text2); margin-top: 4px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.invest-group { scroll-margin-top: 16px; }
+
+.save-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; transition: transform .15s; margin-top: 4px; }
+.save-btn:active { transform: scale(.98); }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+
+/* Prog bar */
+.prog-item { margin-bottom: 16px; }
+.prog-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.prog-name { font-size: 14px; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.prog-amt { font-size: 14px; font-weight: 700; }
+.prog-track { height: 7px; background: rgba(0,0,0,.08); border-radius: 7px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 7px; transition: width 1s cubic-bezier(.34,1.2,.64,1); }
+.prog-pct-label { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+/* History rows in detail */
+.hist-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: .5px solid var(--divider); }
+.hist-row:last-child { border-bottom: none; }
+.hist-num { font-size: 15px; font-weight: 700; color: var(--text3); width: 22px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.hist-info { flex: 1; }
+.hist-main { font-size: 15px; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.hist-sub { font-size: 12px; color: var(--text2); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-top: 1px; }
+.hist-val { font-size: 15px; font-weight: 800; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+.empty-msg { text-align: center; color: var(--text3); font-size: 14px; padding: 20px 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+/* Toast */
+.toast {
+  position: fixed; top: 56px; left: 50%; transform: translateX(-50%) translateY(-16px);
+  background: rgba(0,0,0,0.8); color: #fff; padding: 11px 22px; border-radius: 22px;
+  font-size: 14px; font-weight: 600; backdrop-filter: blur(12px);
+  opacity: 0; transition: all .35s cubic-bezier(.34,1.56,.64,1); z-index: 999;
+  white-space: nowrap; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Scroll fix for detail */
+.detail-panel::-webkit-scrollbar { display: none; }
+
+/* ── NUMBER DISPLAY: Helvetica for clean numeric rendering ── */
+.stat-val, .big-val, .ring-pct, .hist-val, .prog-amt,
+.d-row-val, .hero-val, .sc-val, .l-btn, .save-btn, .act-btn,
+.login-btn {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+
+/* ── STOCK TABLE ── */
+.stock-table { width:100%; border-collapse:collapse; margin-top:4px; }
+.stock-table th {
+  text-align:right; font-size:11px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text3); padding:8px 10px 10px;
+  border-bottom:1px solid var(--divider);
+}
+.stock-table th:first-child { text-align:left; }
+.stock-table td {
+  text-align:right; font-size:13px; padding:10px 10px;
+  border-bottom:.5px solid var(--divider); color:var(--text);
+  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+}
+.stock-table td:first-child { text-align:left; color:var(--text2); font-size:12px; }
+.stock-table tr:last-child td { border-bottom:none; }
+.stock-table tr.total-row td {
+  font-weight:800; font-size:14px; color:var(--text);
+  background:rgba(0,122,255,.05); border-top:1px solid var(--blue);
+}
+.stock-table .dep { color:var(--green); font-weight:600; }
+.stock-table .wd  { color:var(--red);   font-weight:600; }
+.stock-table .div { color:var(--orange); font-weight:600; }
+.stock-table .tot { color:var(--blue);  font-weight:800; }
+
+/* stat pill row */
+.stat-pill-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.stat-pill {
+  flex:1; min-width:80px; background:var(--bg); border-radius:14px;
+  padding:12px 14px; text-align:center;
+}
+.sp-label { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+.sp-val { font-size:18px; font-weight:900; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:-.3px; }
+
+
+/* ── INCOME TABLE ── */
+.inc-table { width:100%; border-collapse:collapse; font-size:12px; }
+.inc-table th {
+  text-align:right; font-size:10px; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--text3); padding:7px 8px 9px;
+  border-bottom:1px solid var(--divider); white-space:nowrap;
+}
+.inc-table th:first-child { text-align:left; }
+.inc-table td {
+  text-align:right; font-size:12px; padding:9px 8px;
+  border-bottom:.5px solid var(--divider); color:var(--text);
+  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  white-space:nowrap;
+}
+.inc-table td:first-child { text-align:left; color:var(--text2); font-size:11px; }
+.inc-table tr:last-child td { border-bottom:none; }
+.inc-table tr.yr-total-row td {
+  font-weight:800; font-size:13px; background:rgba(0,122,255,.06);
+  border-top:1.5px solid var(--blue); border-bottom:1.5px solid var(--blue);
+  color:var(--blue);
+}
+.inc-table tr.yr-total-row td:first-child { color:var(--blue); }
+.inc-table .sal { color:var(--green); }
+.inc-table .pvd { color:var(--blue); }
+.inc-table .espp { color:var(--orange); }
+.inc-table .sale { color:var(--purple); }
+.inc-table .zero { color:var(--text3); }
+
+/* Year filter tabs */
+.yr-tabs { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; margin-bottom:16px; flex-wrap:nowrap; }
+.yr-tabs::-webkit-scrollbar { display:none; }
+.yr-tab { flex-shrink:0; padding:6px 14px; border-radius:20px; border:1.5px solid var(--divider);
+  background:var(--bg); font-size:12px; font-weight:700; color:var(--text2);
+  cursor:pointer; transition:all .18s; font-family:'Helvetica Neue',Helvetica,sans-serif; }
+.yr-tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+
+/* Grand total banner */
+.grand-banner {
+  background:linear-gradient(135deg,rgba(0,122,255,.12),rgba(88,86,214,.08));
+  border-radius:16px; padding:16px 18px; margin-bottom:16px;
+  display:flex; flex-wrap:wrap; gap:12px;
+}
+.gb-item { flex:1; min-width:90px; }
+.gb-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+.gb-val { font-size:17px; font-weight:900; font-family:'Helvetica Neue',Helvetica,sans-serif; letter-spacing:-.3px; }
+
+</style>
 </head>
 <body>
-  <p>Redirecting to <a href="./personal-journal.html">My Journal</a>...</p>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-page">
+  <div class="l-icon">💰</div>
+  <div class="l-title">My Journal</div>
+  <div class="l-sub">Personal Finance Journal</div>
+  <div class="l-form">
+    <div class="l-group">
+      <label>Username</label>
+      <input type="text" id="lu" placeholder="Username" autocomplete="username"/>
+    </div>
+    <div class="l-group">
+      <label>Password</label>
+      <input type="password" id="lp" placeholder="Password" autocomplete="current-password"/>
+    </div>
+    <button class="l-btn" onclick="doLogin()">Sign In</button>
+    <div class="l-err" id="lerr">Incorrect username or password</div>
+    <div class="l-hint">Default: user / 1234</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- ══════ DASHBOARD (Summary) PAGE ══════ -->
+  <div class="page active" id="page-home">
+    <div class="grad-header">
+      <div class="grad-bg"></div>
+      <div class="grad-content">
+        <div class="grad-title">Summary</div>
+        <div class="av-btn" onclick="doLogout()">👤</div>
+      </div>
+    </div>
+
+    <div style="height:40px"></div>
+
+    <div class="section-row">
+      <div class="section-label">Pinned</div>
+      <div class="section-action">Edit</div>
+    </div>
+
+    <div class="cards-list">
+
+      <!-- CARD: Investment -->
+      <div class="h-card" onclick="switchTab('invest')">
+        <div class="h-card-header">
+          <div class="h-card-left">
+            <span class="h-card-icon">🌱</span>
+            <span class="h-card-title" style="color:var(--green)">Investment</span>
+          </div>
+          <div class="h-card-right">
+            <span class="h-card-date">This Month</span>
+            <span class="h-chev">›</span>
+          </div>
+        </div>
+        <div class="h-card-body">
+          <div class="stat-row stat-grid" id="dash-invest-row">
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--green)">Income Salary</div>
+              <div class="stat-val"><span id="d-salary">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--blue)">Provident funds</div>
+              <div class="stat-val"><span id="d-pvd">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--orange)">ESPP</div>
+              <div class="stat-val"><span id="d-espp">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--orange)">Thai Stock</div>
+              <div class="stat-val"><span id="d-thai-stock">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--teal)">US FCD</div>
+              <div class="stat-val"><span id="d-us-fcd">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--blue)">US Stock</div>
+              <div class="stat-val"><span id="d-us-stock">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+            <div class="stat-col">
+              <div class="stat-name" style="color:var(--purple)">Insurance saving</div>
+              <div class="stat-val"><span id="d-insurance-saving">—</span> <span class="stat-unit">฿</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD: Total Assets -->
+      <div class="h-card" onclick="openDetail('assets')">
+        <div class="h-card-header">
+          <div class="h-card-left">
+            <span class="h-card-icon">📊</span>
+            <span class="h-card-title" style="color:var(--blue)">Total Assets</span>
+          </div>
+          <div class="h-card-right">
+            <span class="h-card-date">Latest</span>
+            <span class="h-chev">›</span>
+          </div>
+        </div>
+        <div class="h-card-body">
+          <div class="big-label">Total Assets</div>
+          <div class="big-val"><span id="d-total-asset">0</span> <span class="big-unit">฿</span></div>
+        </div>
+      </div>
+
+    </div><!-- /cards-list -->
+  </div>
+
+  <!-- ══════ INVESTMENT PAGE ══════ -->
+  <div class="page" id="page-invest">
+    <div class="grad-header">
+      <div class="grad-bg" style="background:linear-gradient(160deg,#d4f5e2,#c8eaff,#e8d5f5)"></div>
+      <div class="grad-content">
+        <div class="grad-title">Investment</div>
+      </div>
+    </div>
+    <div style="height:40px"></div>
+    <div class="section-row">
+      <div class="section-label">Record</div>
+    </div>
+    <!-- Summary card on invest page -->
+    <div class="cards-list">
+      <div class="h-card" onclick="openDetail('assets')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">📈</span><span class="h-card-title" style="color:var(--blue)">View Total Assets</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px">
+          Charts and summary of all assets
+        </div>
+      </div>
+
+
+      <div class="h-card" onclick="openDetail('income')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">💼</span><span class="h-card-title" style="color:var(--purple)">Income Salary</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Date, amount and notes for salary entries
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('provident')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">🏦</span><span class="h-card-title" style="color:var(--green)">Provident funds</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Monthly self contribution and company match
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('espp')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">🧾</span><span class="h-card-title" style="color:var(--orange)">ESPP</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Employee stock purchase plan entries
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('thaiStock')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">📈</span><span class="h-card-title" style="color:var(--orange)">Thai Stock</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Date, amount and notes for Thai stock updates
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('usFcd')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">💵</span><span class="h-card-title" style="color:var(--teal)">US FCD</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Foreign currency deposit balance
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('usStock')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">🌐</span><span class="h-card-title" style="color:var(--blue)">US Stock</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          US equity holdings and updates
+        </div>
+      </div>
+      <div class="h-card" onclick="openInvestEntry('insuranceSaving')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">🛡️</span><span class="h-card-title" style="color:var(--purple)">Insurance saving</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Savings value from insurance policies
+        </div>
+      </div>
+      <div class="h-card" onclick="openAddCustomTopic('invest')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">➕</span><span class="h-card-title" style="color:var(--green)">Add Custom Topic</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Create your own investment log category
+        </div>
+      </div>
+      <div id="invest-custom-cards"></div>
+    </div>
+  </div>
+
+  <!-- ══════ DEBT PAGE ══════ -->
+  <div class="page" id="page-debt">
+    <div class="grad-header">
+      <div class="grad-bg" style="background:linear-gradient(160deg,#ffd5d5,#ffe5cc,#f5d0ff)"></div>
+      <div class="grad-content">
+        <div class="grad-title">Debt</div>
+      </div>
+    </div>
+    <div style="height:40px"></div>
+    <div class="section-row">
+      <div class="section-label">Record</div>
+    </div>
+    <div class="cards-list">
+      <div class="h-card" onclick="openDetail('debt')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">🏠</span><span class="h-card-title" style="color:var(--red)">Log Debt Payments</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px">
+          Mortgage, insurance, parents and cat hotel
+        </div>
+      </div>
+      <div class="h-card" onclick="openDetail('debtprog')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">📊</span><span class="h-card-title" style="color:var(--orange)">Payment Progress</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px">
+          View repayment status for each item
+        </div>
+      </div>
+      <div class="h-card" onclick="openAddCustomTopic('debt')">
+        <div class="h-card-header">
+          <div class="h-card-left"><span class="h-card-icon">➕</span><span class="h-card-title" style="color:var(--red)">Add Custom Topic</span></div>
+          <div class="h-card-right"><span class="h-chev">›</span></div>
+        </div>
+        <div class="h-card-body" style="color:var(--text2);font-size:14px">
+          Create your own debt log category
+        </div>
+      </div>
+      <div id="debt-custom-cards"></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB BAR ══ -->
+  <div class="tab-bar">
+    <div class="tab-item active" id="tab-home" onclick="switchTab('home')">
+      <div class="tab-icon-wrap">🏠</div>
+      <div class="tab-label">Summary</div>
+    </div>
+    <div class="tab-item" id="tab-invest" onclick="switchTab('invest')">
+      <div class="tab-icon-wrap">📈</div>
+      <div class="tab-label">Investment</div>
+    </div>
+    <div class="tab-item" id="tab-debt" onclick="switchTab('debt')">
+      <div class="tab-icon-wrap">💳</div>
+      <div class="tab-label">Debt</div>
+    </div>
+  </div>
+</div><!-- /app -->
+
+
+<!-- ══════════════════════════════════════
+     DETAIL SHEETS
+══════════════════════════════════════ -->
+<div class="detail-sheet" id="detail-sheet" onclick="closeDetailOutside(event)">
+  <div class="detail-backdrop"></div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-grab"></div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     DETAIL TEMPLATES
+══════════════════════════════════════ -->
+
+<!-- INVEST FORM -->
+<template id="tpl-invest">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#d4f5e2,#c8eaff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">🌱</div>
+        <div class="detail-title" style="color:var(--green)">Investment</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Select Month</div>
+        <div class="chip-row" id="d-month-chips"></div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Log Investment Data</div>
+        <div class="invest-menu-grid">
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-salary')">
+            <div class="invest-menu-title">Income Salary</div>
+            <div class="invest-menu-sub">Monthly salary</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-provident')">
+            <div class="invest-menu-title">Provident funds</div>
+            <div class="invest-menu-sub">Self and company match</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-espp')">
+            <div class="invest-menu-title">ESPP</div>
+            <div class="invest-menu-sub">Employee stock plan</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-thai-stock')">
+            <div class="invest-menu-title">Thai Stock</div>
+            <div class="invest-menu-sub">Local stock holdings</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-us-fcd')">
+            <div class="invest-menu-title">US FCD</div>
+            <div class="invest-menu-sub">Foreign currency deposit</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-us-stock')">
+            <div class="invest-menu-title">US Stock</div>
+            <div class="invest-menu-sub">US equity holdings</div>
+          </button>
+          <button class="invest-menu-btn" onclick="scrollInvestSection('invest-insurance')">
+            <div class="invest-menu-title">Insurance saving</div>
+            <div class="invest-menu-sub">Policy savings value</div>
+          </button>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-salary">
+        <div class="d-sec-title">Income Salary</div>
+        <div class="d-form">
+          <div class="d-field"><label>💵 Monthly Salary</label><input type="number" id="fi-salary" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-provident">
+        <div class="d-sec-title">Provident funds</div>
+        <div class="d-form">
+          <div class="d-field"><label>🏦 Provident Fund — Self</label><input type="number" id="fi-pvd-self" placeholder="0.00"/></div>
+          <div class="d-field"><label>🏢 Provident Fund — Company Match</label><input type="number" id="fi-pvd-company" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-espp">
+        <div class="d-sec-title">ESPP</div>
+        <div class="d-form">
+          <div class="d-field"><label>🧾 ESPP</label><input type="number" id="fi-espp" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-thai-stock">
+        <div class="d-sec-title">Thai Stock</div>
+        <div class="d-form">
+          <div class="d-field"><label>📈 Thai Stock</label><input type="number" id="fi-stock-thai" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-us-fcd">
+        <div class="d-sec-title">US FCD</div>
+        <div class="d-form">
+          <div class="d-field"><label>💵 US FCD</label><input type="number" id="fi-us-fcd" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-us-stock">
+        <div class="d-sec-title">US Stock</div>
+        <div class="d-form">
+          <div class="d-field"><label>🌐 US Stock</label><input type="number" id="fi-us-stock" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section invest-group" id="invest-insurance">
+        <div class="d-sec-title">Insurance saving</div>
+        <div class="d-form">
+          <div class="d-field"><label>🛡️ Insurance saving</label><input type="number" id="fi-insurance-saving" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Other Savings & Income</div>
+        <div class="d-form">
+          <div class="d-field"><label>✈️ Travel Savings with Partner</label><input type="number" id="fi-travel" placeholder="0.00"/></div>
+          <div class="d-field"><label>🏘️ Rental Income</label><input type="number" id="fi-rental" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label><input type="text" id="fi-note" placeholder="Additional notes..."/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-blue" onclick="saveInvest()">Save Investment Data</button>
+      <div class="d-section">
+        <div class="d-sec-title">History</div>
+        <div id="fi-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-investentry">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" id="invest-entry-grad" style="background:linear-gradient(160deg,#d4f5e2,#c8eaff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon" id="invest-entry-icon">🌱</div>
+        <div class="detail-title" id="invest-entry-title" style="color:var(--green)">Investment Entry</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Record Entry</div>
+        <div class="d-form">
+          <div class="d-field"><label>📅 Date</label><input type="date" id="ie-date"/></div>
+          <div class="d-field"><label id="ie-amount-label">💰 Amount</label><input type="number" id="ie-amount" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label><input type="text" id="ie-note" placeholder="Additional notes..."/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-blue" id="ie-save-btn" onclick="saveInvestEntry()">Save Entry</button>
+      <div class="d-section">
+        <div class="d-sec-title">History</div>
+        <div id="ie-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-customtopic">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" id="custom-topic-grad" style="background:linear-gradient(160deg,#d4f5e2,#c8eaff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">➕</div>
+        <div class="detail-title" id="custom-topic-title" style="color:var(--green)">Add Custom Topic</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">New Topic</div>
+        <div class="d-form">
+          <div class="d-field"><label>🏷️ Topic Name</label><input type="text" id="custom-topic-name" placeholder="e.g. Crypto, Personal Loan"/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-blue" onclick="saveCustomTopic()">Create Topic</button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-customentry">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" id="custom-entry-grad" style="background:linear-gradient(160deg,#d4f5e2,#c8eaff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">🗂️</div>
+        <div class="detail-title" id="custom-entry-title" style="color:var(--green)">Custom Entry</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Record Entry</div>
+        <div class="d-form">
+          <div class="d-field"><label>📅 Date</label><input type="date" id="custom-entry-date"/></div>
+          <div class="d-field"><label>💰 Amount</label><input type="number" id="custom-entry-amount" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label><input type="text" id="custom-entry-note" placeholder="Additional notes..."/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-blue" id="custom-entry-save" onclick="saveCustomEntry()">Save Entry</button>
+      <div class="d-section">
+        <div class="d-sec-title">History</div>
+        <div id="custom-entry-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- ASSETS DETAIL -->
+<template id="tpl-assets">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#c8dff7,#dcd5f7)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">📊</div>
+        <div class="detail-title" style="color:var(--blue)">Total Assets</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Overview</div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(52,199,89,.15)">🏦</div><div class="d-row-label">Total Provident Fund</div></div>
+          <div class="d-row-val" style="color:var(--green)" id="da-pvd">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(255,149,0,.15)">🧾</div><div class="d-row-label">ESPP</div></div>
+          <div class="d-row-val" style="color:var(--orange)" id="da-espp">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(90,200,250,.15)">💵</div><div class="d-row-label">US FCD</div></div>
+          <div class="d-row-val" style="color:var(--teal)" id="da-us-fcd">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(0,122,255,.15)">🌐</div><div class="d-row-label">US Stock</div></div>
+          <div class="d-row-val" style="color:var(--blue)" id="da-us-stock">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(255,149,0,.15)">📈</div><div class="d-row-label">Thai Stock</div></div>
+          <div class="d-row-val" style="color:var(--orange)" id="da-thai">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(175,82,222,.15)">🛡️</div><div class="d-row-label">Insurance saving</div></div>
+          <div class="d-row-val" style="color:var(--purple)" id="da-insurance-saving">฿0</div>
+        </div>
+        <div class="d-row">
+          <div class="d-row-left"><div class="d-row-icon" style="background:rgba(255,45,85,.15)">🏘️</div><div class="d-row-label">Cumulative Rental</div></div>
+          <div class="d-row-val" style="color:var(--purple)" id="da-rental">฿0</div>
+        </div>
+        <div class="d-row" style="border-top:1px solid var(--divider);margin-top:4px;padding-top:12px">
+          <div class="d-row-left"><div class="d-row-label" style="font-size:16px;font-weight:700">Grand Total</div></div>
+          <div class="d-row-val" style="color:var(--blue);font-size:20px" id="da-total">฿0</div>
+        </div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Salary Chart (Last 6 Months)</div>
+        <canvas id="detail-chart-salary" height="140"></canvas>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Asset Allocation</div>
+        <canvas id="detail-chart-pie" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- TRAVEL DETAIL -->
+<template id="tpl-travel">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#c8dff7,#cce8ff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">✈️</div>
+        <div class="detail-title" style="color:var(--blue)">Travel Goal</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Savings Summary</div>
+        <div style="text-align:center;padding:12px 0">
+          <div style="font-size:13px;color:var(--text2);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif">Saved</div>
+          <div style="font-size:52px;font-weight:900;color:var(--blue);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;letter-spacing:-1px" id="dtr-amt">฿0</div>
+          <div style="font-size:14px;color:var(--text3);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif">Goal: ฿100,000</div>
+          <div style="height:8px;background:rgba(0,0,0,.07);border-radius:8px;margin:14px 0 8px;overflow:hidden">
+            <div id="dtr-bar" style="height:100%;border-radius:8px;background:var(--blue);width:0%;transition:width 1s ease"></div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:var(--blue);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif" id="dtr-pct">0%</div>
+        </div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Travel Savings History</div>
+        <div id="dtr-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- RENTAL DETAIL -->
+<template id="tpl-rental">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#ffe5cc,#fff0cc)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">🏘️</div>
+        <div class="detail-title" style="color:var(--orange)">Rental Income</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">IncomeCumulative Rental</div>
+        <div style="font-size:48px;font-weight:900;color:var(--orange);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;letter-spacing:-1px;text-align:center;padding:12px 0" id="dre-total">฿0</div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Monthly</div>
+        <div id="dre-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- DEBT FORM -->
+<template id="tpl-debt">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#ffd5d5,#ffe5cc)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">🏠</div>
+        <div class="detail-title" style="color:var(--red)">Debt</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Home Debt</div>
+        <div class="d-form">
+          <div class="d-field"><label>🏠 Mortgage Payment (Monthly)</label><input type="number" id="fd-house" placeholder="0.00"/></div>
+          <div class="d-field"><label>🛡️ Home Insurance</label><input type="number" id="fd-ins" placeholder="0.00"/></div>
+          <div class="d-field"><label>💰 Remaining Mortgage Balance</label><input type="number" id="fd-remain" placeholder="0.00"/></div>
+        </div>
+      </div>
+      <div class="d-section">
+        <div class="d-sec-title">Family & Others</div>
+        <div class="d-form">
+          <div class="d-field"><label>👨 Debt to Father</label><input type="number" id="fd-dad" placeholder="0.00"/></div>
+          <div class="d-field"><label>👩 Debt to Mother</label><input type="number" id="fd-mom" placeholder="0.00"/></div>
+          <div class="d-field"><label>🐱 Cat Hotel Debt</label><input type="number" id="fd-cat" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label><input type="text" id="fd-note" placeholder="Additional notes..."/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-green" onclick="saveDebt()">Save Debt Data</button>
+      <div class="d-section">
+        <div class="d-sec-title">History</div>
+        <div id="fd-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- DEBT PROGRESS -->
+<template id="tpl-debtprog">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#ffe5cc,#f5d0ff)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">📊</div>
+        <div class="detail-title" style="color:var(--orange)">Progress</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Debt Repayment Status</div>
+        <div id="dp-list"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+<!-- THAI STOCK DETAIL -->
+<template id="tpl-thaistock">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#fff3e0,#ffe0b2,#fff8e1)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">📈</div>
+        <div class="detail-title" style="color:var(--orange)">Thai Stocks</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+
+      <!-- Summary pills -->
+      <div class="d-section">
+        <div class="d-sec-title">Portfolio Summary</div>
+        <div class="stat-pill-row">
+          <div class="stat-pill">
+            <div class="sp-label" style="color:var(--green)">Deposited</div>
+            <div class="sp-val" style="color:var(--green)">268,000</div>
+          </div>
+          <div class="stat-pill">
+            <div class="sp-label" style="color:var(--red)">Withdrawn</div>
+            <div class="sp-val" style="color:var(--red)">81,600</div>
+          </div>
+          <div class="stat-pill">
+            <div class="sp-label" style="color:var(--orange)">Dividends</div>
+            <div class="sp-val" style="color:var(--orange)">53,923</div>
+          </div>
+        </div>
+        <div class="stat-pill-row">
+          <div class="stat-pill" style="background:rgba(0,122,255,.08)">
+            <div class="sp-label" style="color:var(--blue)">Net Holding</div>
+            <div class="sp-val" style="color:var(--blue)">186,400</div>
+          </div>
+          <div class="stat-pill">
+            <div class="sp-label" style="color:var(--purple)">Net Invested</div>
+            <div class="sp-val" style="color:var(--purple)">186,400</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction Table -->
+      <div class="d-section">
+        <div class="d-sec-title">Transaction History</div>
+        <div style="overflow-x:auto;">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Deposit</th>
+                <th>Withdrawal</th>
+                <th>Dividend (Yr)</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="total-row">
+                <td style="text-align:left;font-weight:800">Total</td>
+                <td class="dep">268,000</td>
+                <td class="wd">81,600</td>
+                <td class="div">53,922.88</td>
+                <td class="tot">186,400</td>
+              </tr>
+              <tr><td>21/09/2015</td><td class="dep">20,000</td><td></td><td></td><td></td></tr>
+              <tr><td>23/09/2015</td><td class="dep">10,000</td><td></td><td></td><td></td></tr>
+              <tr><td>24/09/2015</td><td class="dep">9,000</td><td></td><td></td><td></td></tr>
+              <tr><td>26/09/2015</td><td class="dep">6,000</td><td></td><td></td><td></td></tr>
+              <tr><td>15/01/2016</td><td class="dep">3,000</td><td></td><td></td><td></td></tr>
+              <tr><td>11/05/2016</td><td class="dep">50,000</td><td></td><td></td><td></td></tr>
+              <tr><td>09/09/2016</td><td class="dep">10,000</td><td></td><td></td><td></td></tr>
+              <tr><td>12/09/2016</td><td class="dep">10,000</td><td></td><td></td><td></td></tr>
+              <tr><td>31/07/2017</td><td class="dep">10,000</td><td></td><td></td><td></td></tr>
+              <tr><td>20/07/2018</td><td></td><td class="wd">20,000</td><td class="div">4,603.00</td><td></td></tr>
+              <tr><td>01/01/2019</td><td></td><td></td><td class="div">6,121.93</td><td></td></tr>
+              <tr><td>19/10/2020</td><td class="dep">30,000</td><td></td><td class="div">5,972.85</td><td></td></tr>
+              <tr><td>07/05/2021</td><td class="dep">30,000</td><td></td><td></td><td></td></tr>
+              <tr><td>21/09/2021</td><td class="dep">30,000</td><td></td><td></td><td></td></tr>
+              <tr><td>30/11/2021</td><td class="dep">30,000</td><td></td><td class="div">6,762.60</td><td></td></tr>
+              <tr><td>06/01/2022</td><td class="dep">20,000</td><td></td><td class="div">8,781.50</td><td></td></tr>
+              <tr><td>12/05/2023</td><td></td><td class="wd">10,000</td><td></td><td></td></tr>
+              <tr><td>25/08/2023</td><td></td><td class="wd">21,600</td><td class="div">10,283.40</td><td></td></tr>
+              <tr><td>08/12/2024</td><td></td><td></td><td class="div">11,397.60</td><td></td></tr>
+              <tr><td>12/06/2025</td><td></td><td class="wd">30,000</td><td></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add new transaction -->
+      <div class="d-section">
+        <div class="d-sec-title">Add Transaction</div>
+        <div class="d-form">
+          <div class="d-field"><label>📅 Date (DD/MM/YYYY)</label>
+            <input type="text" id="ts-date" placeholder="e.g. 01/01/2026"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="d-field"><label>💚 Deposit</label>
+              <input type="number" id="ts-dep" placeholder="0"/></div>
+            <div class="d-field"><label>🔴 Withdrawal</label>
+              <input type="number" id="ts-wd" placeholder="0"/></div>
+          </div>
+          <div class="d-field"><label>🟡 Dividend</label>
+            <input type="number" id="ts-div" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label>
+            <input type="text" id="ts-note" placeholder="Optional notes..."/></div>
+        </div>
+        <button class="save-btn btn-blue" onclick="addStockTx()">Add Transaction</button>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">
+          New entries will appear above the table after refresh
+        </div>
+      </div>
+
+      <!-- Extra transactions log -->
+      <div class="d-section" id="extra-tx-section" style="display:none">
+        <div class="d-sec-title">Additional Entries</div>
+        <div id="extra-tx-list"></div>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<!-- INCOME DETAIL TEMPLATE -->
+<template id="tpl-income">
+  <div>
+    <div class="detail-grad">
+      <div class="detail-grad-bg" style="background:linear-gradient(160deg,#e8d5f5,#d5d0f5,#c8dff7)"></div>
+    </div>
+    <div class="detail-header">
+      <div class="detail-icon-title">
+        <div class="detail-big-icon">💼</div>
+        <div class="detail-title" style="color:var(--purple)">Income Salary</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="d-section">
+        <div class="d-sec-title">Record Entry</div>
+        <div class="d-form">
+          <div class="d-field"><label>📅 Date</label><input type="date" id="inc-date"/></div>
+          <div class="d-field"><label>💵 Amount</label><input type="number" id="inc-amount" placeholder="0.00"/></div>
+          <div class="d-field"><label>📝 Notes</label><input type="text" id="inc-note" placeholder="Additional notes..."/></div>
+        </div>
+      </div>
+      <button class="save-btn btn-blue" onclick="saveIncomeEntry()">Save Salary</button>
+      <div class="d-section">
+        <div class="d-sec-title">History</div>
+        <div id="inc-hist"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
+<script>
+const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CREDS = {user:'user',pass:'1234'};
+const firebaseConfig = {
+  apiKey: "AIzaSyB4GhBaSLviQWxnI4ShlZR70iQkcPVo9Ws",
+  authDomain: "myjournal-d1a66.firebaseapp.com",
+  projectId: "myjournal-d1a66",
+  storageBucket: "myjournal-d1a66.firebasestorage.app",
+  messagingSenderId: "972543709285",
+  appId: "1:972543709285:web:bd70daeaafd9bad3aeb68c",
+  measurementId: "G-8770BYK64M"
+};
+const CLOUD_DOC_PATH = { collection:'appState', doc:'journalState' };
+let curM = new Date().getMonth();
+let D = normalizeState(JSON.parse(localStorage.getItem('jd2')||'{}'));
+let cloudDb = null;
+let cloudStateReady = Promise.resolve();
+const f = n=>'฿'+(+n||0).toLocaleString('en-US');
+const fN = n=>(+n||0).toLocaleString('en-US');
+const mk = m=>new Date().getFullYear()+'-'+String(m+1).padStart(2,'0');
+const INVEST_ENTRY_CONFIG = {
+  provident: { title:'Provident funds', icon:'🏦', color:'var(--green)', gradient:'linear-gradient(160deg,#d4f5e2,#c8f0de)', amountLabel:'🏦 Provident funds amount', field:'pvdSelf', dateField:'dateProvident', noteField:'noteProvident', saveText:'Save Provident funds' },
+  espp: { title:'ESPP', icon:'🧾', color:'var(--orange)', gradient:'linear-gradient(160deg,#ffe4bf,#ffd6a5)', amountLabel:'🧾 ESPP amount', field:'espp', dateField:'dateEspp', noteField:'noteEspp', saveText:'Save ESPP' },
+  thaiStock: { title:'Thai Stock', icon:'📈', color:'var(--orange)', gradient:'linear-gradient(160deg,#ffe3bf,#ffd1d1)', amountLabel:'📈 Thai Stock amount', field:'stockThai', dateField:'dateThaiStock', noteField:'noteThaiStock', saveText:'Save Thai Stock' },
+  usFcd: { title:'US FCD', icon:'💵', color:'var(--teal)', gradient:'linear-gradient(160deg,#d8f6ff,#d3ebff)', amountLabel:'💵 US FCD amount', field:'usFcd', dateField:'dateUsFcd', noteField:'noteUsFcd', saveText:'Save US FCD' },
+  usStock: { title:'US Stock', icon:'🌐', color:'var(--blue)', gradient:'linear-gradient(160deg,#d9ebff,#d8e2ff)', amountLabel:'🌐 US Stock amount', field:'usStock', dateField:'dateUsStock', noteField:'noteUsStock', saveText:'Save US Stock' },
+  insuranceSaving: { title:'Insurance saving', icon:'🛡️', color:'var(--purple)', gradient:'linear-gradient(160deg,#eadcff,#f0d8ff)', amountLabel:'🛡️ Insurance saving amount', field:'insuranceSaving', dateField:'dateInsuranceSaving', noteField:'noteInsuranceSaving', saveText:'Save Insurance saving' }
+};
+const CUSTOM_DOMAIN_CONFIG = {
+  invest: { label:'Investment', icon:'➕', color:'var(--green)', gradient:'linear-gradient(160deg,#d4f5e2,#c8eaff)', categoriesKey:'customInvestCategories' },
+  debt: { label:'Debt', icon:'➕', color:'var(--red)', gradient:'linear-gradient(160deg,#ffd5d5,#ffe5cc)', categoriesKey:'customDebtCategories' }
+};
+function normalizeState(raw = {}){
+  return {
+    inv: raw.inv || {},
+    debts: raw.debts || [],
+    customInvestCategories: raw.customInvestCategories || [],
+    customDebtCategories: raw.customDebtCategories || [],
+    customEntries: raw.customEntries || []
+  };
+}
+function syncLocalState(){
+  localStorage.setItem('jd2', JSON.stringify(D));
+}
+async function saveCloudState(){
+  if(!cloudDb) return;
+  try{
+    await cloudDb.collection(CLOUD_DOC_PATH.collection).doc(CLOUD_DOC_PATH.doc).set({
+      state: D,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  }catch(err){
+    console.error('Cloud save failed', err);
+  }
+}
+function persist(){
+  syncLocalState();
+  void saveCloudState();
+}
+async function loadCloudState(){
+  if(!cloudDb) return;
+  try{
+    const snap = await cloudDb.collection(CLOUD_DOC_PATH.collection).doc(CLOUD_DOC_PATH.doc).get();
+    if(snap.exists){
+      D = normalizeState((snap.data() || {}).state || {});
+      syncLocalState();
+    }else{
+      await saveCloudState();
+    }
+  }catch(err){
+    console.error('Cloud load failed', err);
+  }
+}
+function initFirebaseCloud(){
+  if(typeof firebase === 'undefined') return Promise.resolve();
+  if(!firebase.apps.length){
+    firebase.initializeApp(firebaseConfig);
+  }
+  cloudDb = firebase.firestore();
+  return loadCloudState();
+}
+cloudStateReady = initFirebaseCloud();
+function incomeMonthSummary(key){
+  if(!key) return {espp:0};
+  const [year, month] = key.split('-');
+  return INCOME_DATA.reduce((acc, row) => {
+    const [, mm, yy] = row.date.split('/');
+    if(yy === year && mm === month){
+      acc.espp += row.esppInv || 0;
+    }
+    return acc;
+  }, {espp:0});
+}
+function investmentSnapshot(inv = {}, key){
+  return {
+    salary: inv.salary || 0,
+    providentFunds: (inv.pvdSelf || 0) + (inv.pvdCompany || 0),
+    espp: inv.espp || 0,
+    thaiStock: inv.stockThai ?? 0,
+    usFcd: inv.usFcd ?? 0,
+    usStock: inv.usStock ?? inv.stockForeign ?? 0,
+    insuranceSaving: inv.insuranceSaving ?? 0,
+    travel: inv.travel || 0,
+    rental: inv.rental || 0
+  };
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  const u=document.getElementById('lu').value, p=document.getElementById('lp').value;
+  const e=document.getElementById('lerr');
+  if(u===CREDS.user&&p===CREDS.pass){
+    await cloudStateReady;
+    document.getElementById('login-page').style.display='none';
+    document.getElementById('app').style.display='block';
+    e.style.display='none';
+    renderCustomCategoryCards();
+    updateDashboard();
+  } else { e.style.display='block'; document.getElementById('lp').value=''; }
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Enter'&&document.getElementById('login-page').style.display!=='none') doLogin(); });
+function doLogout(){ if(!confirm('Sign out?'))return; location.reload(); }
+
+// ── TAB ──
+function switchTab(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='home') updateDashboard();
+  if(id==='invest' || id==='debt') renderCustomCategoryCards();
+}
+
+// ── DASHBOARD UPDATE ──
+function updateDashboard(){
+  const keys=Object.keys(D.inv).sort();
+  const lk=keys[keys.length-1];
+  const li=D.inv[lk]||{};
+  const snap=investmentSnapshot(li, lk);
+
+  // invest row
+  document.getElementById('d-salary').textContent=fN(snap.salary);
+  document.getElementById('d-pvd').textContent=fN(snap.providentFunds);
+  document.getElementById('d-espp').textContent=fN(snap.espp);
+  document.getElementById('d-thai-stock').textContent=fN(snap.thaiStock);
+  document.getElementById('d-us-fcd').textContent=fN(snap.usFcd);
+  document.getElementById('d-us-stock').textContent=fN(snap.usStock);
+  document.getElementById('d-insurance-saving').textContent=fN(snap.insuranceSaving);
+
+  // total asset
+  const asset=snap.providentFunds+snap.espp+snap.usFcd+snap.usStock+snap.thaiStock+snap.insuranceSaving;
+  document.getElementById('d-total-asset').textContent=fN(asset);
+}
+
+// ── DETAIL SHEET ──
+let currentDetailChart1=null, currentDetailChart2=null;
+let currentInvestEntryType=null;
+let currentCustomDomain=null;
+let currentCustomTopicId=null;
+
+function openDetail(type, targetSection){
+  const sheet=document.getElementById('detail-sheet');
+  const panel=document.getElementById('detail-content');
+  const tpl=document.getElementById('tpl-'+type);
+  if(!tpl) return;
+  panel.innerHTML='';
+  panel.appendChild(tpl.content.cloneNode(true));
+  sheet.classList.add('open');
+  document.getElementById('detail-panel').scrollTop=0;
+
+  // Init content
+  if(type==='invest') initInvestDetail(targetSection);
+  if(type==='investentry') initInvestEntryPage();
+  if(type==='customtopic') initCustomTopicPage();
+  if(type==='customentry') initCustomEntryPage();
+  if(type==='assets') initAssetsDetail();
+  if(type==='travel') initTravelDetail();
+  if(type==='rental') initRentalDetail();
+  if(type==='debt') initDebtDetail();
+  if(type==='debtprog') initDebtProg();
+  if(type==='thaistock') initThaiStockDetail();
+  if(type==='income') initIncomeDetail();
+}
+
+function closeDetail(){
+  document.getElementById('detail-sheet').classList.remove('open');
+  if(currentDetailChart1){currentDetailChart1.destroy();currentDetailChart1=null;}
+  if(currentDetailChart2){currentDetailChart2.destroy();currentDetailChart2=null;}
+}
+
+function closeDetailOutside(e){
+  if(e.target===document.getElementById('detail-sheet')) closeDetail();
+}
+
+function openInvestEntry(type){
+  currentInvestEntryType=type;
+  openDetail('investentry');
+}
+
+function openAddCustomTopic(domain){
+  currentCustomDomain=domain;
+  openDetail('customtopic');
+}
+
+function openCustomEntry(domain, topicId){
+  currentCustomDomain=domain;
+  currentCustomTopicId=topicId;
+  openDetail('customentry');
+}
+
+function scrollInvestSection(id){
+  const el=document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function escapeHtml(str=''){
+  return String(str)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+function slugifyTopic(name=''){
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || ('topic-'+Date.now());
+}
+
+function renderCustomCategoryCards(){
+  renderCustomCategoryCardsForDomain('invest');
+  renderCustomCategoryCardsForDomain('debt');
+}
+
+function renderCustomCategoryCardsForDomain(domain){
+  const cfg=CUSTOM_DOMAIN_CONFIG[domain];
+  const container=document.getElementById(domain+'-custom-cards');
+  if(!cfg || !container) return;
+  const categories=D[cfg.categoriesKey] || [];
+  if(!categories.length){ container.innerHTML=''; return; }
+  container.innerHTML=categories.map(cat => `
+    <div class="h-card" onclick="openCustomEntry('${domain}','${escapeHtml(cat.id)}')">
+      <div class="h-card-header">
+        <div class="h-card-left"><span class="h-card-icon">🗂️</span><span class="h-card-title" style="color:${cfg.color}">${escapeHtml(cat.title)}</span></div>
+        <div class="h-card-right"><span class="h-chev">›</span></div>
+      </div>
+      <div class="h-card-body" style="color:var(--text2);font-size:14px">
+        Custom ${cfg.label.toLowerCase()} topic
+      </div>
+    </div>`).join('');
+}
+
+// ── INVEST DETAIL ──
+function initInvestDetail(targetSection){
+  const con=document.getElementById('d-month-chips');
+  MO.forEach((m,i)=>{
+    const c=document.createElement('div');
+    c.className='chip'+(i===curM?' active':'');
+    c.textContent=m;
+    c.onclick=()=>{ curM=i; con.querySelectorAll('.chip').forEach((ch,j)=>ch.classList.toggle('active',j===i)); loadInvFields(); };
+    con.appendChild(c);
+  });
+  loadInvFields();
+  renderInvHist();
+  if(targetSection){
+    requestAnimationFrame(()=>scrollInvestSection(targetSection));
+  }
+}
+
+function loadInvFields(){
+  const inv=D.inv[mk(curM)]||{};
+  const map={salary:'fi-salary','pvdSelf':'fi-pvd-self','pvdCompany':'fi-pvd-company','espp':'fi-espp','stockThai':'fi-stock-thai','usFcd':'fi-us-fcd','usStock':'fi-us-stock','insuranceSaving':'fi-insurance-saving',travel:'fi-travel',rental:'fi-rental',note:'fi-note'};
+  Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=inv[k]||''; });
+  const snap=investmentSnapshot(inv, mk(curM));
+  const esppField=document.getElementById('fi-espp');
+  if(esppField && !esppField.value && snap.espp) esppField.value=snap.espp;
+  const legacyUsStock=document.getElementById('fi-us-stock');
+  if(legacyUsStock && !legacyUsStock.value && inv.stockForeign) legacyUsStock.value=inv.stockForeign;
+}
+
+function saveInvest(){
+  D.inv[mk(curM)]={
+    salary:+document.getElementById('fi-salary').value||0,
+    pvdSelf:+document.getElementById('fi-pvd-self').value||0,
+    pvdCompany:+document.getElementById('fi-pvd-company').value||0,
+    espp:+document.getElementById('fi-espp').value||0,
+    stockThai:+document.getElementById('fi-stock-thai').value||0,
+    usFcd:+document.getElementById('fi-us-fcd').value||0,
+    usStock:+document.getElementById('fi-us-stock').value||0,
+    stockForeign:+document.getElementById('fi-us-stock').value||0,
+    insuranceSaving:+document.getElementById('fi-insurance-saving').value||0,
+    travel:+document.getElementById('fi-travel').value||0,
+    rental:+document.getElementById('fi-rental').value||0,
+    note:document.getElementById('fi-note').value
+  };
+  persist(); updateDashboard(); renderInvHist(); showToast('✓ Investment data saved');
+}
+
+function renderInvHist(){
+  const el=document.getElementById('fi-hist'); if(!el) return;
+  const rows=Object.entries(D.inv).sort((a,b)=>b[0].localeCompare(a[0]));
+  if(!rows.length){el.innerHTML='<div class="empty-msg">No records yet</div>';return;}
+  el.innerHTML=rows.map(([k,v],i)=>{
+    const [y,m]=k.split('-');
+    const snap=investmentSnapshot(v, k);
+    const tot=snap.providentFunds+snap.espp+snap.usFcd+snap.usStock+snap.thaiStock+snap.insuranceSaving+snap.travel+snap.rental;
+    return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${MO[+m-1]} ${+y+543}</div><div class="hist-sub">Salary ${f(v.salary)}</div></div><div class="hist-val" style="color:var(--green)">${f(tot)}</div></div>`;
+  }).join('');
+}
+
+function initInvestEntryPage(){
+  const cfg=INVEST_ENTRY_CONFIG[currentInvestEntryType];
+  if(!cfg) return;
+  const title=document.getElementById('invest-entry-title');
+  const icon=document.getElementById('invest-entry-icon');
+  const grad=document.getElementById('invest-entry-grad');
+  const amountLabel=document.getElementById('ie-amount-label');
+  const saveBtn=document.getElementById('ie-save-btn');
+  if(title){ title.textContent=cfg.title; title.style.color=cfg.color; }
+  if(icon) icon.textContent=cfg.icon;
+  if(grad) grad.style.background=cfg.gradient;
+  if(amountLabel) amountLabel.textContent=cfg.amountLabel;
+  if(saveBtn) saveBtn.textContent=cfg.saveText;
+
+  const dateInput=document.getElementById('ie-date');
+  const amountInput=document.getElementById('ie-amount');
+  const noteInput=document.getElementById('ie-note');
+  if(dateInput) dateInput.value=new Date().toISOString().slice(0,10);
+  if(amountInput) amountInput.value='';
+  if(noteInput) noteInput.value='';
+  renderInvestEntryHist();
+}
+
+function saveInvestEntry(){
+  const cfg=INVEST_ENTRY_CONFIG[currentInvestEntryType];
+  if(!cfg) return;
+  const date=(document.getElementById('ie-date')?.value || '').trim();
+  const amount=+document.getElementById('ie-amount').value||0;
+  const note=(document.getElementById('ie-note')?.value || '').trim();
+  if(!date){ showToast('⚠️ Please select a date'); return; }
+  if(!amount){ showToast('⚠️ Please enter an amount'); return; }
+  const key=date.slice(0,7);
+  const existing=D.inv[key]||{};
+  D.inv[key]={
+    ...existing,
+    [cfg.field]: amount,
+    [cfg.dateField]: date,
+    [cfg.noteField]: note
+  };
+  if(cfg.field==='pvdSelf') D.inv[key].pvdCompany=0;
+  if(cfg.field==='usStock') D.inv[key].stockForeign=amount;
+  persist();
+  updateDashboard();
+  renderInvestEntryHist();
+  showToast('✓ Entry saved');
+}
+
+function renderInvestEntryHist(){
+  const cfg=INVEST_ENTRY_CONFIG[currentInvestEntryType];
+  const el=document.getElementById('ie-hist');
+  if(!cfg || !el) return;
+  const rows=Object.entries(D.inv)
+    .filter(([,v]) => (v[cfg.field]||0) > 0)
+    .sort((a,b) => {
+      const ad=(a[1][cfg.dateField] || a[0]).toString();
+      const bd=(b[1][cfg.dateField] || b[0]).toString();
+      return bd.localeCompare(ad);
+    });
+  if(!rows.length){ el.innerHTML='<div class="empty-msg">No records yet</div>'; return; }
+  el.innerHTML=rows.map(([k,v],i)=>{
+    const dt=v[cfg.dateField] || (k+'-01');
+    const note=v[cfg.noteField] ? `<div class="hist-sub">${v[cfg.noteField]}</div>` : '';
+    return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${dt}</div>${note}</div><div class="hist-val" style="color:${cfg.color}">${f(v[cfg.field]||0)}</div></div>`;
+  }).join('');
+}
+
+function initCustomTopicPage(){
+  const cfg=CUSTOM_DOMAIN_CONFIG[currentCustomDomain];
+  if(!cfg) return;
+  const title=document.getElementById('custom-topic-title');
+  const grad=document.getElementById('custom-topic-grad');
+  const input=document.getElementById('custom-topic-name');
+  if(title){ title.textContent='Add '+cfg.label+' Topic'; title.style.color=cfg.color; }
+  if(grad) grad.style.background=cfg.gradient;
+  if(input) input.value='';
+}
+
+function saveCustomTopic(){
+  const cfg=CUSTOM_DOMAIN_CONFIG[currentCustomDomain];
+  const input=document.getElementById('custom-topic-name');
+  const name=(input?.value || '').trim();
+  if(!cfg || !name){ showToast('⚠️ Please enter a topic name'); return; }
+  const list=D[cfg.categoriesKey] || [];
+  const baseId=slugifyTopic(name);
+  const id=list.some(cat => cat.id===baseId) ? `${baseId}-${Date.now()}` : baseId;
+  list.push({ id, title:name });
+  D[cfg.categoriesKey]=list;
+  persist();
+  renderCustomCategoryCards();
+  closeDetail();
+  showToast('✓ Topic created');
+}
+
+function initCustomEntryPage(){
+  const cfg=CUSTOM_DOMAIN_CONFIG[currentCustomDomain];
+  const category=(D[cfg?.categoriesKey] || []).find(cat => cat.id===currentCustomTopicId);
+  if(!cfg || !category) return;
+  const title=document.getElementById('custom-entry-title');
+  const grad=document.getElementById('custom-entry-grad');
+  const saveBtn=document.getElementById('custom-entry-save');
+  const dateInput=document.getElementById('custom-entry-date');
+  const amountInput=document.getElementById('custom-entry-amount');
+  const noteInput=document.getElementById('custom-entry-note');
+  if(title){ title.textContent=category.title; title.style.color=cfg.color; }
+  if(grad) grad.style.background=cfg.gradient;
+  if(saveBtn) saveBtn.textContent='Save '+category.title;
+  if(dateInput) dateInput.value=new Date().toISOString().slice(0,10);
+  if(amountInput) amountInput.value='';
+  if(noteInput) noteInput.value='';
+  renderCustomEntryHist();
+}
+
+function saveCustomEntry(){
+  const cfg=CUSTOM_DOMAIN_CONFIG[currentCustomDomain];
+  const date=(document.getElementById('custom-entry-date')?.value || '').trim();
+  const amount=+document.getElementById('custom-entry-amount').value||0;
+  const note=(document.getElementById('custom-entry-note')?.value || '').trim();
+  if(!cfg || !currentCustomTopicId){ return; }
+  if(!date){ showToast('⚠️ Please select a date'); return; }
+  if(!amount){ showToast('⚠️ Please enter an amount'); return; }
+  D.customEntries.unshift({
+    domain: currentCustomDomain,
+    topicId: currentCustomTopicId,
+    date,
+    amount,
+    note,
+    ts: Date.now()
+  });
+  persist();
+  renderCustomEntryHist();
+  showToast('✓ Entry saved');
+}
+
+function renderCustomEntryHist(){
+  const cfg=CUSTOM_DOMAIN_CONFIG[currentCustomDomain];
+  const el=document.getElementById('custom-entry-hist');
+  if(!cfg || !el || !currentCustomTopicId) return;
+  const rows=(D.customEntries || [])
+    .filter(entry => entry.domain===currentCustomDomain && entry.topicId===currentCustomTopicId)
+    .sort((a,b) => b.date.localeCompare(a.date) || b.ts - a.ts);
+  if(!rows.length){ el.innerHTML='<div class="empty-msg">No records yet</div>'; return; }
+  el.innerHTML=rows.map((row,i)=>{
+    const note=row.note ? `<div class="hist-sub">${escapeHtml(row.note)}</div>` : '';
+    return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${escapeHtml(row.date)}</div>${note}</div><div class="hist-val" style="color:${cfg.color}">${f(row.amount||0)}</div></div>`;
+  }).join('');
+}
+
+// ── ASSETS DETAIL ──
+function initAssetsDetail(){
+  const keys=Object.keys(D.inv).sort();
+  const lk=keys[keys.length-1];
+  const li=D.inv[lk]||{};
+  const snap=investmentSnapshot(li, lk);
+  const rentalT=Object.values(D.inv).reduce((s,i)=>s+(i.rental||0),0);
+  const total=snap.providentFunds+snap.espp+snap.usFcd+snap.usStock+snap.thaiStock+snap.insuranceSaving+rentalT;
+
+  document.getElementById('da-pvd').textContent=f(snap.providentFunds);
+  document.getElementById('da-espp').textContent=f(snap.espp);
+  document.getElementById('da-us-fcd').textContent=f(snap.usFcd);
+  document.getElementById('da-us-stock').textContent=f(snap.usStock);
+  document.getElementById('da-thai').textContent=f(snap.thaiStock);
+  document.getElementById('da-insurance-saving').textContent=f(snap.insuranceSaving);
+  document.getElementById('da-rental').textContent=f(rentalT);
+  document.getElementById('da-total').textContent=f(total);
+
+  // Salary bar chart
+  const last6=keys.slice(-6);
+  const salaries=last6.map(k=>D.inv[k]?.salary||0);
+  const labels=last6.map(k=>{ const [,m]=k.split('-'); return MO[+m-1]; });
+  const cEl=document.getElementById('detail-chart-salary');
+  if(cEl){
+    currentDetailChart1=new Chart(cEl,{
+      type:'bar',
+      data:{ labels:labels.length?labels:MO.slice(0,3), datasets:[{data:salaries.length?salaries:[0,0,0],
+        backgroundColor:labels.map((_,i,a)=>i===a.length-1?'#007aff':'rgba(0,122,255,.2)'),borderRadius:8,borderSkipped:false}] },
+      options:{ responsive:true,plugins:{legend:{display:false}},
+        scales:{ x:{grid:{display:false},ticks:{font:{family:'Sukhumvit Set',size:11},color:'#8e8e93'}},
+          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{family:'Sukhumvit Set',size:10},color:'#8e8e93',callback:v=>'฿'+(v/1000).toFixed(0)+'k'}} } }
+    });
+  }
+  // Pie
+  const pEl=document.getElementById('detail-chart-pie');
+  const pd=[snap.providentFunds,snap.espp,snap.usFcd,snap.usStock,snap.thaiStock,snap.insuranceSaving,rentalT];
+  if(pEl){
+    currentDetailChart2=new Chart(pEl,{
+      type:'doughnut',
+      data:{ labels:['Provident funds','ESPP','US FCD','US Stock','Thai Stock','Insurance saving','Rental'],
+        datasets:[{data:pd.some(v=>v>0)?pd:[1,1,1,1,1,1,1],
+          backgroundColor:['#34c759','#ff9500','#5ac8fa','#007aff','#ffcc00','#af52de','#ff2d55'],borderWidth:0,hoverOffset:6}] },
+      options:{ responsive:true,plugins:{ legend:{position:'bottom',labels:{font:{family:'Sukhumvit Set',size:11},color:'#636366',padding:12,boxWidth:10}} },cutout:'60%' }
+    });
+  }
+}
+
+// ── TRAVEL DETAIL ──
+function initTravelDetail(){
+  const t=Object.values(D.inv).reduce((s,i)=>s+(i.travel||0),0);
+  const pct=Math.min((t/100000)*100,100);
+  document.getElementById('dtr-amt').textContent=f(t);
+  document.getElementById('dtr-pct').textContent=Math.round(pct)+'%';
+  setTimeout(()=>{ const b=document.getElementById('dtr-bar'); if(b) b.style.width=pct+'%'; },100);
+  const el=document.getElementById('dtr-hist');
+  const rows=Object.entries(D.inv).filter(([,v])=>v.travel>0).sort((a,b)=>b[0].localeCompare(a[0]));
+  if(!rows.length){el.innerHTML='<div class="empty-msg">No records yet</div>';return;}
+  el.innerHTML=rows.map(([k,v],i)=>{ const [y,m]=k.split('-'); return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${MO[+m-1]} ${+y+543}</div></div><div class="hist-val" style="color:var(--blue)">${f(v.travel)}</div></div>`; }).join('');
+}
+
+// ── RENTAL DETAIL ──
+function initRentalDetail(){
+  const total=Object.values(D.inv).reduce((s,i)=>s+(i.rental||0),0);
+  document.getElementById('dre-total').textContent=f(total);
+  const el=document.getElementById('dre-hist');
+  const rows=Object.entries(D.inv).filter(([,v])=>v.rental>0).sort((a,b)=>b[0].localeCompare(a[0]));
+  if(!rows.length){el.innerHTML='<div class="empty-msg">No records yet</div>';return;}
+  el.innerHTML=rows.map(([k,v],i)=>{ const [y,m]=k.split('-'); return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${MO[+m-1]} ${+y+543}</div></div><div class="hist-val" style="color:var(--orange)">${f(v.rental)}</div></div>`; }).join('');
+}
+
+// ── DEBT DETAIL ──
+function initDebtDetail(){
+  const ld=D.debts[0]||{};
+  const m={'house':'fd-house','ins':'fd-ins','remain':'fd-remain','dad':'fd-dad','mom':'fd-mom','cat':'fd-cat','note':'fd-note'};
+  Object.entries(m).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) el.value=ld[k]||''; });
+  renderDebtHist();
+}
+
+function saveDebt(){
+  D.debts.unshift({
+    date:new Date().toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}),
+    house:+document.getElementById('fd-house').value||0,
+    ins:+document.getElementById('fd-ins').value||0,
+    remain:+document.getElementById('fd-remain').value||0,
+    dad:+document.getElementById('fd-dad').value||0,
+    mom:+document.getElementById('fd-mom').value||0,
+    cat:+document.getElementById('fd-cat').value||0,
+    note:document.getElementById('fd-note').value,
+    ts:Date.now()
+  });
+  if(D.debts.length>24) D.debts.pop();
+  persist(); updateDashboard(); renderDebtHist(); showToast('✓ Debt data saved');
+}
+
+function renderDebtHist(){
+  const el=document.getElementById('fd-hist'); if(!el) return;
+  if(!D.debts.length){el.innerHTML='<div class="empty-msg">No records yet</div>';return;}
+  el.innerHTML=D.debts.map((d,i)=>{
+    const tot=(d.house||0)+(d.ins||0)+(d.dad||0)+(d.mom||0)+(d.cat||0);
+    return `<div class="hist-row"><div class="hist-num">${i+1}</div><div class="hist-info"><div class="hist-main">${d.date}</div><div class="hist-sub">Mortgage ${f(d.house)} | Father ${f(d.dad)} | Mother ${f(d.mom)}</div></div><div class="hist-val" style="color:var(--red)">${f(tot)}</div></div>`;
+  }).join('');
+}
+
+// ── DEBT PROGRESS ──
+function initDebtProg(){
+  const ld=D.debts[0]||{};
+  const items=[
+    {l:'🏠 House Payment',v:ld.house||0,max:15000,c:'var(--red)'},
+    {l:'🛡️ Insurance',v:ld.ins||0,max:5000,c:'var(--orange)'},
+    {l:'👨 Father Debt',v:ld.dad||0,max:5000,c:'var(--blue)'},
+    {l:'👩 Mother Debt',v:ld.mom||0,max:5000,c:'var(--purple)'},
+    {l:'🐱 Cat Hotel',v:ld.cat||0,max:3000,c:'var(--green)'},
+  ];
+  const el=document.getElementById('dp-list');
+  el.innerHTML=items.map(it=>{
+    const pct=Math.min((it.v/it.max)*100,100).toFixed(0);
+    return `<div class="prog-item">
+      <div class="prog-head"><span class="prog-name">${it.l}</span><span class="prog-amt" style="color:${it.c}">${f(it.v)}</span></div>
+      <div class="prog-track"><div class="prog-fill" data-w="${pct}" style="background:${it.c};width:0%"></div></div>
+      <div class="prog-pct-label">${pct}% vs. reference ${f(it.max)}</div>
+    </div>`;
+  }).join('');
+  setTimeout(()=>{ el.querySelectorAll('.prog-fill').forEach(b=>b.style.width=b.dataset.w+'%'); },80);
+}
+
+// ── TOAST ──
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+</script>
 </body>
 </html>
